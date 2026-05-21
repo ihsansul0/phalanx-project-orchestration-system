@@ -1,67 +1,96 @@
 import Link from "next/link";
 import { api } from "~/trpc/server";
 import { CreateProjectForm } from "~/components/shared/CreateProjectForm";
-import { UserButton, OrganizationSwitcher, CreateOrganization } from "@clerk/nextjs";
+import { CreateOrganization } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
+import { Folder, Plus } from "lucide-react";
 
 export default async function DashboardPage() {
-    // 1. We securely ask the Bouncer for the user's current state
     const { orgId } = await auth();
 
-    // 2. THE CHECKPOINT: If they don't have an active kitchen, force them to make one!
+    // 1. THE CHECKPOINT: Workspace onboarding fallback
     if (!orgId) {
         return (
-            <main className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-8 text-slate-900">
-                <h1 className="mb-6 text-2xl font-bold tracking-tight">Welcome! Let&apos;s set up your first workspace.</h1>
-                <div className="rounded-xl border bg-white p-8 shadow-sm">
-                    {/* Clerk's pre-built component handles all the complex workspace creation logic */}
-                    <CreateOrganization />
+            <div className="flex min-h-[calc(100vh-7rem)] flex-col items-center justify-center p-4">
+                <div className="max-w-md space-y-6 text-center">
+                    <h1 className="text-2xl font-bold tracking-tight">
+                        Welcome! Let&apos;s set up your first workspace.
+                    </h1>
+                    <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
+                        <CreateOrganization />
+                    </div>
                 </div>
-            </main>
+            </div>
         );
     }
 
-    // 3. THE SAFE ZONE: If they reach here, orgId is guaranteed to exist. We can safely fetch data.
+    // 2. THE DATA INJECTION: Fetching projects tied to this workspace
     const projects = await api.project.getAll();
 
     return (
-        <main className="min-h-screen bg-slate-50 p-8 text-slate-900">
-            <nav className="mb-12 flex items-center justify-between border-b pb-4">
-                <h1 className="text-2xl font-bold tracking-tight">Project Dashboard</h1>
-                <div className="flex items-center gap-4">
-                    <OrganizationSwitcher hidePersonal={true} />
-                    <UserButton />
-                </div>
-            </nav>
+        <div className="space-y-10">
+            {/* PAGE SECTION HEADER */}
+            <div>
+                <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                    Manage your active engineering nodes and workspace environments.
+                </p>
+            </div>
 
-            <div className="mx-auto max-w-3xl">
-                <div className="mb-8 rounded-xl border bg-white p-6 shadow-sm">
-                    <h2 className="mb-4 text-lg font-semibold">Start a New Project</h2>
-                    <CreateProjectForm />
-                </div>
+            {/* DASHBOARD GRID SYSTEM */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 items-start">
 
-                <div className="rounded-xl border bg-white p-6 shadow-sm">
-                    <h2 className="mb-4 text-lg font-semibold">Active Projects</h2>
+                {/* ACTIVE PROJECTS LIST CONTAINER (TAKES 2 COLS ON WIDE SCREENS) */}
+                <div className="lg:col-span-2 space-y-4">
+                    <div className="flex items-center gap-2 font-medium text-sm text-muted-foreground">
+                        <Folder className="h-4 w-4" />
+                        <h2>Active Projects ({projects.length})</h2>
+                    </div>
+
                     {projects.length === 0 ? (
-                        <div className="rounded-lg border border-dashed p-8 text-center text-slate-500">
-                            No projects found in this workspace. Create one above!
+                        <div className="rounded-md border border-dashed border-border bg-card p-12 text-center text-muted-foreground text-sm">
+                            No projects found in this workspace. Provision one to get started.
                         </div>
                     ) : (
-                        <ul className="grid gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {projects.map((project) => (
-                                <li key={project.id} className="group rounded-lg border bg-white shadow-sm transition-all hover:border-slate-400 hover:shadow-md">
-                                    <Link href={`/dashboard/projects/${project.id}`} className="flex items-center justify-between p-4">
-                                        <span className="font-medium group-hover:text-blue-600 transition-colors">{project.name}</span>
-                                        <span className="text-xs text-slate-500">
-                                            Created {project.createdAt.toLocaleDateString()}
-                                        </span>
-                                    </Link>
-                                </li>
+                                <Link
+                                    key={project.id}
+                                    href={`/dashboard/projects/${project.id}`}
+                                    className="group rounded-md border border-border bg-card p-5 transition-all hover:border-white/20 hover:bg-white/[0.02]"
+                                >
+                                    <div className="flex flex-col h-full justify-between gap-8">
+                                        <div>
+                                            <span className="font-semibold text-foreground group-hover:text-white transition-colors block text-base">
+                                                {project.name}
+                                            </span>
+                                            <span className="text-xs text-muted-foreground mt-1 block font-mono">
+                                                NODE_ID: {project.id.slice(0, 8)}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between border-t border-border/50 pt-3 text-xs text-muted-foreground">
+                                            <span>Standard Environment</span>
+                                            <span>{project.createdAt.toLocaleDateString()}</span>
+                                        </div>
+                                    </div>
+                                </Link>
                             ))}
-                        </ul>
+                        </div>
                     )}
                 </div>
+
+                {/* PROJECT CREATION CONTROL DESK (TAKES 1 COL ON WIDE SCREENS) */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2 font-medium text-sm text-muted-foreground">
+                        <Plus className="h-4 w-4" />
+                        <h2>Provision New Engine</h2>
+                    </div>
+                    <div className="rounded-md border border-border bg-card p-5">
+                        <CreateProjectForm />
+                    </div>
+                </div>
+
             </div>
-        </main>
+        </div>
     );
 }

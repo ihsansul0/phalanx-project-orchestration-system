@@ -6,43 +6,62 @@ import { Button } from "~/components/ui/button";
 import { DeleteProjectButton } from "~/components/shared/DeleteProjectButton";
 import { ProjectHeader } from "~/components/shared/ProjectHeader";
 import { ProjectAnalytics } from "~/components/shared/ProjectAnalytics";
+import { ArrowLeft } from "lucide-react";
 
 export default async function ProjectPage({
     params
 }: {
     params: Promise<{ id: string }>
 }) {
-    // In Next.js 15, dynamic route params must be awaited!
+    // Next.js 15 requires dynamic route parameter objects to be explicitly awaited!
     const { id } = await params;
 
     try {
-        // We securely ask the backend for the project details
+        // Securely fetch project records linked to the verified active tenant workspace context
         const project = await api.project.getById({ id });
 
         return (
-            <main className="min-h-screen bg-slate-50 p-8 text-slate-900">
-                <div className="mx-auto max-w-3xl">
+            <div className="w-full space-y-6">
+                {/* MODERN BREADCRUMB / ACTION BAR */}
+                <div className="flex items-center justify-between">
                     <Link href="/dashboard">
-                        <Button variant="ghost" className="mb-8 -ml-4 text-slate-500">
-                            ← Back to Dashboard
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground hover:text-foreground -ml-2 transition-colors gap-2"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            Back to Overview
                         </Button>
                     </Link>
+                </div>
 
-                    {/* Flexbox to push the title left and the delete button right */}
-                    <div className="mb-8 flex items-center justify-between">
+                {/* THE NODE IDENTITY CONTAINER */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-6">
+                    <div className="flex-1">
                         <ProjectHeader projectId={project.id} initialName={project.name} />
+                        <p className="text-xs font-mono text-muted-foreground mt-1">
+                            PROJECT_UUID: {project.id}
+                        </p>
+                    </div>
+                    <div className="flex items-center shrink-0">
                         <DeleteProjectButton projectId={project.id} />
                     </div>
-                    
-                    <ProjectAnalytics projectId={project.id} />
+                </div>
 
-                    {/* We pass the verified ID into our Client Component */}
+                {/* METRIC SUMMARIES LAYER */}
+                <div className="max-w-4xl">
+                    <ProjectAnalytics projectId={project.id} />
+                </div>
+
+                {/* THE UNCONSTRAINED KANBAN CANVAS */}
+                <div className="pt-4">
                     <TaskBoard projectId={project.id} />
                 </div>
-            </main>
+            </div>
         );
-    } catch {
-        // If the project doesn't exist or doesn't belong to the user, throw a 404
+    } catch (error) {
+        // Cascade structural query failures or authorization leaks straight into a secure 404
         notFound();
     }
 }

@@ -9,6 +9,7 @@ import Pusher from "pusher-js";
 import { useUser, useAuth } from "@clerk/nextjs";
 import type { tasks } from "~/server/db/schema";
 import type { InferSelectModel } from "drizzle-orm";
+import { X, Plus, Terminal } from "lucide-react";
 
 const COLUMNS = ["TODO", "IN_PROGRESS", "DONE"] as const;
 type Task = InferSelectModel<typeof tasks>;
@@ -18,24 +19,20 @@ export function TaskBoard({ projectId }: { projectId: string }) {
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const utils = api.useUtils();
 
-    // We need our ID (to prevent echoes) and our Organization ID (to tune the radio)
     const { user } = useUser();
     const { orgId } = useAuth();
 
     // THE LIVE WIRE (Board Listener)
     useEffect(() => {
-        // If we aren't in a workspace yet, don't try to connect
         if (!orgId) return;
 
         const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
             cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
         });
 
-        // Tune into the Workspace-wide frequency
         const channel = pusher.subscribe(`workspace-${orgId}`);
 
         channel.bind("board-updated", (data: { triggeredBy: string }) => {
-            // If SOMEONE ELSE moved a card, instantly refresh our board!
             if (data.triggeredBy !== user?.id) {
                 void utils.task.getByProjectId.invalidate();
             }
@@ -46,10 +43,10 @@ export function TaskBoard({ projectId }: { projectId: string }) {
         };
     }, [orgId, user?.id, utils]);
 
-    // 1. Fetch Tasks
+    // Fetch Tasks
     const { data: tasks, isLoading } = api.task.getByProjectId.useQuery({ projectId });
 
-    // 2. Optimistic Create (Ghost ID)
+    // Optimistic Create
     const createTask = api.task.create.useMutation({
         onMutate: async (newParam) => {
             await utils.task.getByProjectId.cancel({ projectId });
@@ -81,7 +78,7 @@ export function TaskBoard({ projectId }: { projectId: string }) {
         },
     });
 
-    // 3. Optimistic Status Update (The Magic behind the Drag & Drop)
+    // Optimistic Status Update
     const updateStatus = api.task.updateStatus.useMutation({
         onMutate: async (newUpdate) => {
             await utils.task.getByProjectId.cancel({ projectId });
@@ -101,7 +98,7 @@ export function TaskBoard({ projectId }: { projectId: string }) {
         }
     });
 
-    // 4. The Delete Protocol
+    // The Delete Protocol
     const deleteTask = api.task.delete.useMutation({
         onSuccess: () => {
             void utils.task.getByProjectId.invalidate({ projectId });
@@ -109,51 +106,55 @@ export function TaskBoard({ projectId }: { projectId: string }) {
         }
     });
 
-    // THE DRAG & DROP ENGINE
     const onDragEnd = (result: DropResult) => {
         const { destination, source, draggableId } = result;
-
-        // If dropped outside a valid column, do nothing
         if (!destination) return;
-
-        // If dropped back into the exact same column, do nothing
         if (destination.droppableId === source.droppableId) return;
 
-        // OPTIMISTIC TRIGGER: Fire the mutation!
-        // draggableId is the Task ID. destination.droppableId is the new Status.
         updateStatus.mutate({
             taskId: draggableId,
             status: destination.droppableId as "TODO" | "IN_PROGRESS" | "DONE"
         });
     };
 
-    if (isLoading) return <div className="animate-pulse text-slate-500">Loading Kanban...</div>;
+    if (isLoading) {
+        return (
+            <div className="flex items-center gap-3 font-mono text-xs text-muted-foreground animate-pulse py-8">
+                <Terminal className="h-4 w-4" />
+                <span>MAP_TRACK_RECORDS_ENGINE: INITIALIZING_WORKFLOW_STATE...</span>
+            </div>
+        );
+    }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             {/* Rapid-Fire Creation Form */}
             <form
-                onSubmit={(e) => { e.preventDefault(); createTask.mutate({ title, projectId }); }}
-                className="items-center mb-6 flex gap-4"
+                onSubmit={(e) => { e.preventDefault(); if (title.trim()) createTask.mutate({ title, projectId }); }}
+                className="max-w-xl items-center flex gap-3 bg-neutral-900/30 p-2 rounded-md border border-border"
             >
                 <input
                     type="text"
-                    placeholder="What needs to be done?"
+                    placeholder="Initialize fresh task node..."
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="flex-1 rounded-md border p-2 text-sm"
+                    className="flex-1 bg-transparent px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 outline-none transition-all"
                 />
-                <Button type="submit" disabled={!title.trim() || createTask.isPending}>Add Task</Button>
-                {createTask.error && (
-                    <p className="text-sm text-red-500">{createTask.error.data?.zodError?.fieldErrors?.title?.[0] ?? createTask.error.message}</p>
-                )}
+                <Button
+                    type="submit"
+                    size="sm"
+                    disabled={!title.trim() || createTask.isPending}
+                    className="h-8 font-medium tracking-tight gap-1"
+                >
+                    <Plus className="h-3.5 w-3.5" />
+                    Deploy
+                </Button>
             </form>
 
-            {/* THE KANBAN BOARD */}
+            {/* THE KANBAN BOARD MATRIX */}
             <DragDropContext onDragEnd={onDragEnd}>
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 items-start">
                     {COLUMNS.map((colStatus) => {
-                        // Bucket the tasks into their specific columns
                         const columnTasks = tasks?.filter((t) => t.status === colStatus) ?? [];
 
                         return (
@@ -162,14 +163,21 @@ export function TaskBoard({ projectId }: { projectId: string }) {
                                     <div
                                         ref={provided.innerRef}
                                         {...provided.droppableProps}
-                                        className={`flex min-h-[300px] flex-col rounded-xl bg-slate-100 p-4 transition-colors ${snapshot.isDraggingOver ? "bg-slate-200 ring-2 ring-slate-300" : ""
+                                        className={`flex min-h-[550px] flex-col rounded-md border border-border/40 bg-transparent p-4 transition-all ${snapshot.isDraggingOver ? "border-white/20 bg-white/[0.01]" : ""
                                             }`}
                                     >
-                                        <h3 className="mb-4 text-sm font-bold tracking-widest text-slate-500">
-                                            {colStatus.replace("_", " ")} ({columnTasks.length})
-                                        </h3>
+                                        {/* COLUMN STRUCTURAL LABEL */}
+                                        <div className="flex items-center justify-between mb-4 px-1">
+                                            <h3 className="text-xs font-mono font-medium tracking-wider text-muted-foreground">
+                                                {colStatus.replace("_", " ")}
+                                            </h3>
+                                            <span className="rounded bg-neutral-900 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground border border-border/60">
+                                                {columnTasks.length}
+                                            </span>
+                                        </div>
 
-                                        <div className="flex flex-col gap-3">
+                                        {/* DATA STACK TRACK */}
+                                        <div className="flex flex-1 flex-col gap-2.5">
                                             {columnTasks.map((task, index) => (
                                                 <Draggable key={task.id} draggableId={task.id} index={index}>
                                                     {(provided, snapshot) => (
@@ -178,25 +186,30 @@ export function TaskBoard({ projectId }: { projectId: string }) {
                                                             {...provided.draggableProps}
                                                             {...provided.dragHandleProps}
                                                             onClick={() => setSelectedTask(task)}
-                                                            className={`group relative flex flex-col justify-between rounded-lg border bg-white p-4 shadow-sm transition-shadow ${snapshot.isDragging ? "shadow-xl ring-2 ring-blue-500" : "hover:border-slate-300"
+                                                            className={`group relative flex flex-col justify-between rounded-md border p-4 transition-all cursor-pointer select-none ${snapshot.isDragging
+                                                                ? "bg-neutral-900 border-white/30 shadow-2xl scale-[1.01] ring-1 ring-white/10"
+                                                                : "bg-card border-border hover:border-white/20 hover:bg-white/[0.01]"
                                                                 }`}
                                                         >
-                                                            <p className={`font-medium ${task.status === "DONE" ? "text-slate-400 line-through" : "text-slate-900"}`}>
+                                                            <p className={`text-sm font-medium tracking-tight pr-4 leading-relaxed ${task.status === "DONE"
+                                                                ? "text-muted-foreground/60 line-through decoration-muted-foreground/40"
+                                                                : "text-foreground"
+                                                                }`}>
                                                                 {task.title}
                                                             </p>
 
-                                                            {/* Hover Delete Button */}
+                                                            {/* Vectorized Actions Overlay */}
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    if (window.confirm("Delete this task forever?")) {
+                                                                    if (window.confirm("Purge this task environment permanently?")) {
                                                                         deleteTask.mutate({ taskId: task.id })
                                                                     }
                                                                 }}
-                                                                className="absolute right-2 top-2 hidden text-slate-400 hover:text-red-500 group-hover:block"
-                                                                title="Delete task"
+                                                                className="absolute right-3 top-3.5 hidden text-muted-foreground hover:text-white transition-colors group-hover:block"
+                                                                title="Purge Task"
                                                             >
-                                                                ✕
+                                                                <X className="h-3.5 w-3.5" />
                                                             </button>
                                                         </div>
                                                     )}
@@ -212,7 +225,7 @@ export function TaskBoard({ projectId }: { projectId: string }) {
                 </div>
             </DragDropContext>
 
-            {/* Render the Slide-Out Panel if a task is selected */}
+            {/* Slide-Out Workspace Core Context Panel */}
             {selectedTask && (
                 <TaskDetailPanel
                     task={selectedTask}

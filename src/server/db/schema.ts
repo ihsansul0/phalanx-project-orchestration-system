@@ -1,9 +1,9 @@
 import { pgTable, timestamp, varchar, pgEnum, text } from "drizzle-orm/pg-core";
 
-// 1. ENUMS (Strict predefined values)
+// ENUMS (Strict predefined values)
 export const taskStatusEnum = pgEnum("task_status", ["TODO", "IN_PROGRESS", "DONE"]);
 
-// 2. CORE ENTITIES (From Clerk)
+// CORE ENTITIES (From Clerk)
 export const users = pgTable("users", {
   id: varchar("id", { length: 255 }).primaryKey(), // Storing the exact Clerk User ID
   email: varchar("email", { length: 255 }).notNull(),
@@ -17,7 +17,7 @@ export const workspaces = pgTable("workspaces", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// 3. DOMAIN ENTITIES (Our App Data)
+// DOMAIN ENTITIES (Our App Data)
 export const projects = pgTable("projects", {
   id: varchar("id", { length: 255 }).primaryKey(), // We will generate UUIDs/Cuids for these later
   name: varchar("name", { length: 255 }).notNull(),

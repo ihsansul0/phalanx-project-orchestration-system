@@ -6,7 +6,7 @@ import { pusherServer } from "~/server/pusher";
 
 export const taskRouter = createTRPCRouter({
 
-    // 1. THE READ: Fetch tasks for ONE specific project
+    // THE READ: Fetch tasks for ONE specific project
     getByProjectId: protectedProcedure
         .input(z.object({ projectId: z.string() }))
         .query(async ({ ctx, input }) => {
@@ -53,7 +53,7 @@ export const taskRouter = createTRPCRouter({
             };
         }),
 
-    // 2. THE WRITE: Create a new task
+    // THE WRITE: Create a new task
     create: protectedProcedure
         .input(z.object({
             title: z.string().min(3, "Task title must be at least 3 characters"),
@@ -80,7 +80,7 @@ export const taskRouter = createTRPCRouter({
             return { id: newId };
         }),
 
-    // 3. THE STATUS UPDATE: Move a task across the Kanban board
+    // THE STATUS UPDATE: Move a task across the Kanban board
     updateStatus: protectedProcedure
         .input(z.object({
             taskId: z.string(),
@@ -147,7 +147,7 @@ export const taskRouter = createTRPCRouter({
         }),
 
     // THE COLLABORATION HUB (Event Stream)
-    // 1. Fetch comments and stitch them together with User data
+    // Fetch comments and stitch them together with User data
     getComments: protectedProcedure
         .input(z.object({ taskId: z.string() }))
         .query(async ({ ctx, input }) => {
@@ -172,7 +172,7 @@ export const taskRouter = createTRPCRouter({
                 .orderBy(asc(comments.createdAt)); // Oldest at the top, newest at the bottom (like iMessage)
         }),
 
-    // 2. Add a new comment
+    // Add a new comment
     addComment: protectedProcedure
         .input(z.object({
             taskId: z.string(),
