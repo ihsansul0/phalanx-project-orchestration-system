@@ -2,7 +2,7 @@
 
 Phalanx is a real-time, multi-tenant B2B SaaS project management platform built for high-velocity engineering teams. It moves beyond generic task-tracking by organizing projects into isolated, secure workspace nodes driven by an instant-sync data pipeline.
 
-**[Deploy Live Environment // Launch System Console](https://phalanx-ops.vercel.app)**
+**[PHALANX](https://phalanx-pm.vercel.app)**
 
 ---
 
