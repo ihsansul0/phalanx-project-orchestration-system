@@ -21,8 +21,7 @@ Phalanx is engineered using the **T3 Stack** pattern, optimizing for absolute ty
 ## Key Engineering Pillars
 
 ### 1. Zero-Trust Multi-Tenant Isolation
-Unlike basic entry-level platforms that rely on expensive database `JOIN` queries to verify permissions, Phalanx implements an enterprise database sharding pattern. 
-* Every domain entity—including `projects`, `tasks`, and `comments`—is hard-anchored with a `workspaceId` matching the user's active Clerk Organization token.
+* Every domain entity including `projects`, `tasks`, and `comments` is hard-anchored with a `workspaceId` matching the user's active Clerk Organization token.
 * All tRPC routers enforce data perimeter fencing via flat, optimized `where` clauses, preventing cross-tenant data leaks at the query layer.
 
 ### 2. Automated Webhook Synchronization
@@ -30,25 +29,3 @@ User profiles and team configurations are never manually handled by vulnerable d
 
 ### 3. Real-Time Collaboration Canvas
 The task board bypasses traditional "request-response" page refreshes entirely. When an operator alters a task state, client-side actions broadcast lightweight payloads over a secure WebSocket channel using Pusher. Sibling client panels capture the stream and update board cards instantly.
-
----
-
-## Repository Directory Blueprint
-
-```text
-saas/
-├── src/
-│   ├── app/                 # Next.js App Router Pages & API Webhooks
-│   │   ├── (auth)/          # Clerk Authentication Interceptors
-│   │   ├── api/webhooks/    # B2B State Synchronizer Webhooks
-│   │   └── dashboard/       # Core Operational UI Workspace Views
-│   ├── components/
-│   │   ├── shared/          # Live Taskboards, Drawers, & Forms
-│   │   └── ui/              # Primitive Tailwind Component Library
-│   ├── server/
-│   │   ├── api/routers/     # Protected tRPC Business Logic Routers
-│   │   └── db/              # Drizzle Schemas & Connection Hubs
-│   └── lib/                 # Shared Utility Functions
-├── drizzle.config.ts        # Database Migration Matrix Settings
-└── start-database.sh        # Local Docker Database Initialization
-
