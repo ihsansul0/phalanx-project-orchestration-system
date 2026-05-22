@@ -30,7 +30,9 @@ export function CreateProjectForm() {
                     <Terminal className="h-3.5 w-3.5" />
                     Engine Identifier
                 </label>
-                <div className="flex items-center gap-3">
+
+                {/* RESPONSIVE INPUT CONTAINER: Stacks on mobile, inline rows on desktop */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                     <input
                         type="text"
                         placeholder="e.g., Alpha Core, Titan System"
@@ -42,7 +44,7 @@ export function CreateProjectForm() {
                     <Button
                         type="submit"
                         disabled={!name.trim() || createProject.isPending}
-                        className="font-medium tracking-tight h-9 shrink-0"
+                        className="font-medium tracking-tight h-9 w-full sm:w-auto sm:shrink-0 text-xs sm:text-sm"
                     >
                         {createProject.isPending ? "Deploying..." : "Deploy Engine"}
                     </Button>

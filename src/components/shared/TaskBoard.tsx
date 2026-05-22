@@ -199,6 +199,7 @@ export function TaskBoard({ projectId }: { projectId: string }) {
                                                             </p>
 
                                                             {/* Vectorized Actions Overlay */}
+                                                            {/* RESPONSIVE PURGE TRIGGER: Always on for mobile, interactive hover for desktop */}
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -206,7 +207,7 @@ export function TaskBoard({ projectId }: { projectId: string }) {
                                                                         deleteTask.mutate({ taskId: task.id })
                                                                     }
                                                                 }}
-                                                                className="absolute right-3 top-3.5 hidden text-muted-foreground hover:text-white transition-colors group-hover:block"
+                                                                className="absolute right-3 top-3.5 block md:hidden md:group-hover:block text-muted-foreground hover:text-white transition-colors"
                                                                 title="Purge Task"
                                                             >
                                                                 <X className="h-3.5 w-3.5" />
