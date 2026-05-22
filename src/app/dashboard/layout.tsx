@@ -4,7 +4,7 @@ import { UserButton, OrganizationSwitcher } from "@clerk/nextjs";
 import { Settings } from "lucide-react";
 import { auth } from "@clerk/nextjs/server";
 import { api } from "~/trpc/server";
-import { SidebarLinks, TopbarBreadcrumb } from "~/components/shared/DashboardNav";
+import { SidebarLinks, TopbarBreadcrumb, MobileMenu } from "~/components/shared/DashboardNav";
 
 export default async function DashboardLayout({
     children,
@@ -27,8 +27,8 @@ export default async function DashboardLayout({
     return (
         <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground antialiased">
 
-            {/* SIDEBAR NAVIGATION APP SHELL FRAME */}
-            <aside className="flex h-full w-64 flex-col bg-[#050505] border-r border-r-border shrink-0 select-none">
+            {/* SIDEBAR NAVIGATION APP SHELL FRAME (Hidden on mobile viewports via hidden md:flex) */}
+            <aside className="hidden md:flex h-full w-64 flex-col bg-[#050505] border-r border-r-border shrink-0 select-none">
                 {/* Brand Identity / Switcher Module */}
                 <div className="flex h-14 items-center justify-between border-b border-border px-4 gap-2">
                     {/* Phalanx Phi Monogram */}
@@ -81,13 +81,17 @@ export default async function DashboardLayout({
             {/* MAIN PORT ENGINE DISPLAY AREA */}
             <div className="flex flex-1 flex-col h-full overflow-hidden">
 
-                {/* THE LIVE CONTEXT HEADER BAR */}
-                <header className="flex h-14 items-center justify-between border-b border-border bg-background/50 backdrop-blur-md px-6 shrink-0">
+                {/* THE LIVE CONTEXT HEADER BAR (Adjusted padding on mobile via px-4 md:px-6) */}
+                <header className="flex h-14 items-center justify-between border-b border-border bg-background/50 backdrop-blur-md px-4 md:px-6 shrink-0 gap-4">
                     {/* Reactive Multi-tier Navigation Trail */}
-                    <TopbarBreadcrumb projects={projects} />
+                    {/* Reactive Navigation Area holding Mobile Toggle and Breadcrumbs */}
+                    <div className="flex items-center gap-3 min-w-0">
+                        <MobileMenu projects={projects} />
+                        <TopbarBreadcrumb projects={projects} />
+                    </div>
 
                     {/* Secure Session Execution Trigger */}
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 shrink-0">
                         <UserButton
                             userProfileMode="navigation"
                             userProfileUrl="/dashboard/settings?tab=account"
@@ -95,8 +99,8 @@ export default async function DashboardLayout({
                     </div>
                 </header>
 
-                {/* THE LIVE RUNTIME CANVAS CONTAINER */}
-                <main className="flex-1 overflow-y-auto bg-background p-6">
+                {/* THE LIVE RUNTIME CANVAS CONTAINER (Comfortable adaptive padding values) */}
+                <main className="flex-1 overflow-y-auto bg-background p-4 md:p-6">
                     {children}
                 </main>
 

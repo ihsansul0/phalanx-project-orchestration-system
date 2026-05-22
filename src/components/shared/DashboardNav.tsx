@@ -5,6 +5,10 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, Folder, ChevronRight } from "lucide-react";
 import { useOrganization } from "@clerk/nextjs";
 
+import { useState, useEffect } from "react";
+import { Menu, X, Settings } from "lucide-react";
+import { OrganizationSwitcher } from "@clerk/nextjs";
+
 interface NavProject {
     id: string;
     name: string;
@@ -97,6 +101,88 @@ export function TopbarBreadcrumb({ projects }: { projects: NavProject[] }) {
                 </>
             ) : (
                 <span className="text-foreground">Node Console</span>
+            )}
+        </div>
+    );
+}
+
+// THE TACTICAL MOBILE MENU OVERLAY DRAWER
+export function MobileMenu({ projects }: { projects: NavProject[] }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const pathname = usePathname();
+
+    // Intercept navigation events to cycle the open state down automatically
+    useEffect(() => {
+        setIsOpen(false);
+    }, [pathname]);
+
+    return (
+        <div className="md:hidden flex items-center shrink-0">
+            <button
+                onClick={() => setIsOpen(true)}
+                className="p-1.5 rounded-md border border-border/40 bg-neutral-950 text-muted-foreground hover:text-white transition-all active:scale-[0.97]"
+                aria-label="Open System Console Drawer"
+            >
+                <Menu className="h-4 w-4" />
+            </button>
+
+            {isOpen && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex animate-in fade-in duration-200">
+
+                    {/* Drawer Console Content Block */}
+                    <div className="w-72 bg-[#050505] h-full border-r border-border flex flex-col p-4 justify-between animate-in slide-in-from-left duration-200">
+
+                        <div className="space-y-6">
+                            {/* Drawer Header & Identity Node */}
+                            <div className="flex items-center justify-between border-b border-border pb-4">
+                                <div className="flex items-center gap-2">
+                                    <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                        <circle cx="12" cy="12" r="8" />
+                                        <path d="M12 2v20" />
+                                    </svg>
+                                    <span className="font-mono text-xs font-black tracking-[0.2em] text-white uppercase">
+                                        Phalanx
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => setIsOpen(false)}
+                                    className="p-1.5 rounded-md text-muted-foreground hover:text-white transition-all"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+
+                            {/* Organization Context Scope Hook */}
+                            <div className="px-1">
+                                <OrganizationSwitcher
+                                    hidePersonal
+                                    organizationProfileMode="navigation"
+                                    organizationProfileUrl="/dashboard/settings?tab=workspace"
+                                    afterSelectOrganizationUrl="/dashboard"
+                                />
+                            </div>
+
+                            {/* Navigation Links Rails */}
+                            <nav className="px-1 pt-2">
+                                <SidebarLinks projects={projects} />
+                            </nav>
+                        </div>
+
+                        {/* Drawer Bottom Configuration Link */}
+                        <div className="border-t border-border pt-4">
+                            <Link
+                                href="/dashboard/settings"
+                                className="flex items-center gap-3 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-white/5 hover:text-white transition-all"
+                            >
+                                <Settings className="h-4 w-4" />
+                                Settings
+                            </Link>
+                        </div>
+                    </div>
+
+                    {/* Dark Background Backdrop Catch Zone (Closes menu when clicking outside area) */}
+                    <div className="flex-1 h-full" onClick={() => setIsOpen(false)} />
+                </div>
             )}
         </div>
     );
